@@ -8,12 +8,12 @@ imgCloud图床，一个基于Vue-Cli和ThinkPHP的前后端分离图床。
 
 
 #### 安装教程
-#### （一）事前准备
+##### （一）事前准备
 imgCloud前后端分离，后续将会推出多服务器支持
 1. 您需要两个域名（我们以tu.zhfblog.top和api.tu.zhfblog.top为例）
 2. 您需要先确保安装了node.JS和npm，现在node.JS自带npm，在命令提示符中输入npm -v查看npm是否安装
 3. 在您的电脑上输入命令 `git clone https://gitee.com/ZHFHZ/img-cloud.git` 下载此项目，如您没有安装Git，则下载zip文件并解压
-#### （二）部署后端
+##### （二）部署后端
 1. 本程序后端采用ThinkPHP，建议使用PHP7.4环境部署
 2. 打开服务器（以宝塔面板为例）
 3. 新建数据库，导入imgCloud.sql文件
@@ -27,9 +27,10 @@ USERNAME = 数据库用户名
 PASSWORD = 数据库密码
 ```
 并把文件名改为`.env`
+
 8. 访问后端，查看是否正确配置完成。
 
-#### （三）编译前端
+##### （三）编译前端
 1. 使用命令提示符定位到刚刚下载的`img-cloud`文件夹中的`img-cloud-web-vue3`文件夹，
 3. 修改`src\store`文件夹下的`index.js`文件如下（末尾要带上”/“）：
 ```
@@ -45,9 +46,13 @@ storageServer:"当前存储服务器/"
 #### 使用说明
 演示地址：http://tu.zhfblog.top/
 
+已经部署好的后端接口文档：https://easydoc.net/s/63476661
 
+用户上传的文件在后端`public\storage`文件夹下，缩略图在`public\thumb`文件夹下
 #### 参与贡献
 咸鱼郑某
+
+QQ群：857994945
 
 
 #### 感谢以下开源项目
