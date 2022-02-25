@@ -19,3 +19,5 @@ Route::post('upload', 'index/upload');
 Route::post('userRegistered', 'index/userRegistered');
 Route::post('userLogin', 'index/userLogin');//用户登录
 Route::post('userCheck', 'index/userCheck');//uuid验证
+Route::post('getUserImgList', 'index/getUserImgList');//获取用户文件列表
+Route::post('MakeThumbnail', 'index/MakeThumbnail');

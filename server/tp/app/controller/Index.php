@@ -6,6 +6,8 @@ use Redis;
 use RedisException;
 use think\facade\Db;
 use app\Request;
+use think\facade\Filesystem;
+use think\Image;
 use \think\response\Json;
 
 class Index extends BaseController
@@ -23,26 +25,51 @@ class Index extends BaseController
 
     public function upload(Request $request){
         // 获取表单上传文件
-        $files = $request->file();
+        $file = $request->file();
         $uuid = $request->param("uuid");
-        $uid = $request->param("uid");
         $token = $request->param("token");
-
+        $fileSize = 1024*1024*10;
         try {
-            validate(['image'=>'fileExt:jpg,png'])
-                ->check($files);
-            $imgUrl = array();
-            foreach($files as $file) {
-                $savename = \think\facade\Filesystem::disk('public')->putFile( 'pic', $file);
-                if($uuid != null && $this->privateUserCheck($uuid,$token)['status']==200){
-                    Db::table("img_allimgs")->insert(['uid'=>$uid,"storage_location"=>$savename]);
-                    return json(array("status"=>200,"imgUrl"=>$savename,"msg"=>"用户上传"));
-                }
-                Db::table("img_allimgs")->insert(['uid'=>"0","storage_location"=>$savename]);
-                return json(array("status"=>200,"imgUrl"=>$savename,"msg"=>"游客上传"));
+            validate(['image'=>'fileSize:'.$fileSize.'|fileExt:jpg,png,bmp,heif'])
+                ->check($file);
+            $file = $request->file("image");
+            $savename = \think\facade\Filesystem::disk('public')->putFile( 'pic', $file);
+            $res = $this->privateUserCheck($uuid,$token);
+            $fileInfo = pathinfo($savename); //图片数据
+            if($uuid != null && $res["status"] ==200){
+                //生成缩略图
+                /*
+                 *
+                    {
+                     "dirname": "pic/20220224",
+                      "basename": "476771bc8e6321352302e92608cbf9e2.png",
+                      "extension": "png",
+                      "filename": "476771bc8e6321352302e92608cbf9e2"
+                    }
+                 * */
+                $image = \think\Image::open($file);
+                $image->thumb(300, 300)->save('thumb/'.pathinfo($savename)["basename"]);
+                Db::table("img_allimgs")->insert([
+                    'uid'=>$res["uid"],
+                    'dirname'=>$fileInfo['dirname'],
+                    'basename'=>$fileInfo['basename'],
+                    'extension'=>$fileInfo['extension'],
+                    'filename'=>$fileInfo['filename'],
+                    "thumb"=>"thumb"
+                ]);
+                return json(array("imgUrl"=>$savename,"msg"=>"用户上传",200));
             }
+            Db::table("img_allimgs")->insert([
+                'uid'=>"0",
+                'dirname'=>$fileInfo['dirname'],
+                'basename'=>$fileInfo['basename'],
+                'extension'=>$fileInfo['extension'],
+                'filename'=>$fileInfo['filename'],
+                "thumb"=>"thumb"
+            ]);
+            return json(array("imgUrl"=>$savename,"msg"=>"游客上传"),200);
         } catch (\think\exception\ValidateException $e) {
-            return $e->getMessage();
+            return json(array("msg"=>$e->getMessage()),403);
         }
     }
 
@@ -60,10 +87,10 @@ class Index extends BaseController
                 'regdate'=>date('Y-m-d H:i:s'),
             ];
             if (Db::table("img_users")->insert($data) === 1){
-                return json(array("status"=>200,"msg"=>"注册成功"));
+                return json(array("msg"=>"注册成功"),200);
             }
         }
-            return json(array("status"=>500,"msg"=>"用户名已存在"));
+            return json(array("msg"=>"用户名已存在"),500);
     }
     public function userLogin(Request $request): Json
     {
@@ -71,7 +98,7 @@ class Index extends BaseController
         try {
             $redis = $this->initRedis(); //初始化Redis
         } catch (RedisException $e) {
-            return json(array("status"=>500,"msg"=>"Redis服务运行错误，请联系管理员检查"));
+            return json(array("msg"=>"Redis服务运行错误，请联系管理员检查"),500);
         }
         if($redis)
         $username = $request->param('username');
@@ -81,11 +108,11 @@ class Index extends BaseController
             $token = md5($username . time()). $this->randStr(8); //生成token
             //设置 redis 字符串数据
             $uuid = $username . "_" . md5(time()); //用户标识
-            $redis->set($uuid,$token);
-            $redis->expire("$uuid",60); //测试用10秒
-            return json(array("status"=>200,"msg"=>"登录成功","uuid"=>$uuid,"token"=>$token,"uid"=>$res['uid']));
+            $redis->lPush($uuid,$token,$res['uid']);
+            $redis->expire($uuid,172800); //缓存2天
+            return json(array("msg"=>"登录成功","uuid"=>$uuid,"token"=>$token,"uid"=>$res['uid']),200);
         }else{
-            return json(array("status"=>403,"msg"=>"用户名或密码错误"));
+            return json(array("msg"=>"用户名或密码错误"),403);
         }
     }
 
@@ -94,9 +121,15 @@ class Index extends BaseController
         $uuid = $request->param("uuid");
         $token = $request->param("token");
         try {
-            return json($this->privateUserCheck($uuid, $token));
+            $res = $this->privateUserCheck($uuid, $token);
+            if ($res["status"] == 200){
+                return json(array("msg"=>$res["msg"],"uid" => $res["uid"]),200);
+            }else{
+                return json(array("msg"=>$res["msg"]),403);
+            }
+
         } catch (RedisException $e) {
-            return json(array("status"=>500,"msg"=>"Redis服务运行错误，请联系管理员检查"));
+            return json(array("msg"=>"Redis服务运行错误，请联系管理员检查"),500);
         }
 
     }
@@ -109,12 +142,28 @@ class Index extends BaseController
 
         $redis = $this->initRedis(); //初始化Redis
         //验证用户登录
-        if ($redis->exists($uuid) === 1 && $redis->get($uuid) === $token){
-            return array("status"=>200,"msg"=>"服务器验证通过");
+        if ($redis->exists($uuid) === 1 && $redis->lIndex($uuid,1) === $token){
+            return array("status"=>200,"msg"=>"服务器验证通过","uid"=>$redis->lIndex($uuid,0)); //第一个是uid
         }else{
             return array("status"=>403,"msg"=>"服务器验证未通过");
         }
     }
+
+    public function getUserImgList(Request $request){
+        //获取用户图片列表
+        $uuid = $request->param("uuid");
+        $token = $request->param("token");
+        $page = $request->param("page");
+        $res =$this->privateUserCheck($uuid,$token);
+        if ($res["status"] == 200){
+            return json(Db::table("img_allimgs")->where("uid",$res["uid"]) ->paginate([
+                'list_rows'=> "20",
+                'page' => "$page",
+            ]));
+        }
+        return \json(array("msg"=>"用户验证失败"),403);
+    }
+
 
     /**
      * @throws RedisException
@@ -140,5 +189,6 @@ class Index extends BaseController
         return $randomString;
 
     }
+
 
 }

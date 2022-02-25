@@ -9,9 +9,14 @@
               :action="storageServer + uploadUrl"
               multiple
               :data="data"
+              name="image"
               :on-preview="preview"
               :on-success="uploadSuccess"
               :on-error="uploadError"
+              :file-list="imgList"
+              :limit="10"
+              :on-exceed="beyondUploadMax"
+              accept=".jpg,.jpeg,.png,.gif,.bmp,.pdf,.JPG,.JPEG,.PBG,.GIF,.BMP,.PDF"
           >
             <el-icon class="el-icon--upload"><upload-filled /></el-icon>
             <div class="el-upload__text">
@@ -42,7 +47,7 @@ export default {
       dataServer:this.$store.state.serve_state['dataServer'],//当前数据服务器
       storageServer:this.$store.state.serve_state['storageServer'],//当前存储服务器
       uploadUrl:this.$store.state.serve_state['uploadUrl'],//当前上传接口
-      fileList:[],
+      imgList:[],
       data:{
         "uid":localStorage.getItem("uid"),
         "uuid":localStorage.getItem("uuid"),
@@ -54,18 +59,30 @@ export default {
     uploadSuccess:function (response,file){
       console.log(this.fileList)
       console.log(response)
-      ElNotification({
+       ElNotification({
         title: '成功',
         message: file.name + " 上传完成",
         type: 'success',
       })
     },
-    uploadError:function (){
-
+    uploadError:function (err){
+      console.log(err)
+      ElNotification({
+        title: '失败',
+        message: err,
+        type: 'error',
+      })
+    },
+    beyondUploadMax:function (){
+      ElNotification({
+        title: '失败',
+        message: "单次上传不超过10张图片",
+        type: 'error',
+      })
     },
     preview:function (file){
       console.log(file.response)
-      alert(this.storageServer + "storage/" + file.response['imgUrl'])
+      alert(this.storageServer + "storage/" + file.response["imgUrl"])
     }
   },
   computed:{
