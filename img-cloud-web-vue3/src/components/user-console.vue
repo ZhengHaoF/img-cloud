@@ -273,6 +273,7 @@ export default {
     },
     showImage:function (index){
       //图片查看
+      this.preview_src_list = [];
       this.preview_src_list.push(this.urls[index]);
       this.img_viewer_show = true;
     },
