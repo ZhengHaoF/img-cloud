@@ -3,32 +3,33 @@
     <el-main>
       <el-row type="flex" class="row-bg" justify="center">
         <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-          <el-upload
-              class="upload-demo"
-              drag
-              :action="storageServer + uploadUrl"
-              multiple
-              :data="data"
-              name="image"
-              :on-preview="preview"
-              :on-success="uploadSuccess"
-              :on-error="uploadError"
-              :file-list="imgList"
-              :limit="10"
-              :on-exceed="beyondUploadMax"
-              accept=".jpg,.jpeg,.png,.gif,.bmp,.pdf,.JPG,.JPEG,.PBG,.GIF,.BMP,.PDF"
-          >
-            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-            <div class="el-upload__text">
-              目前状态：{{ getUserState }}<br>
-              拖拽文件到此处或<em>点击此处上传</em>
-            </div>
-            <template #tip>
-              <div class="el-upload__tip">
-                仅能上传 jpg/png/heif/bmp 格式的文件，上传完成后点击查看直链
+          <el-space style="padding: 10px">
+            <el-upload
+                drag
+                :action="storageServer + uploadUrl"
+                multiple
+                :data="data"
+                name="image"
+                :on-preview="preview"
+                :on-success="uploadSuccess"
+                :on-error="uploadError"
+                :file-list="imgList"
+                :limit="20"
+                :on-exceed="beyondUploadMax"
+                accept=".jpg,.jpeg,.png,.gif,.bmp,.pdf,.JPG,.JPEG,PNG,.GIF,.BMP"
+            >
+              <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+              <div class="el-upload__text">
+                目前状态：{{ getUserState }}<br>
+                拖拽文件到此处或<em>点击此处上传</em>
               </div>
-            </template>
-          </el-upload>
+              <template #tip>
+                <div class="el-upload__tip">
+                  仅能上传 jpg/png/heif/bmp 格式的文件，上传完成后点击查看直链
+                </div>
+              </template>
+            </el-upload>
+          </el-space>
         </el-col>
       </el-row>
     </el-main>
@@ -38,7 +39,7 @@
 <script>
 
 import {UploadFilled} from "@element-plus/icons-vue";
-import {ElNotification} from "element-plus";
+import {ElMessage, ElNotification} from "element-plus";
 
 export default {
   name: "img-upload",
@@ -57,7 +58,6 @@ export default {
   },
   methods:{
     uploadSuccess:function (response,file){
-      console.log(this.fileList)
       console.log(response)
        ElNotification({
         title: '成功',
@@ -76,13 +76,18 @@ export default {
     beyondUploadMax:function (){
       ElNotification({
         title: '失败',
-        message: "单次上传不超过10张图片",
+        message: "单次上传不超过20张图片",
         type: 'error',
       })
     },
     preview:function (file){
       console.log(file.response)
-      alert(this.storageServer + "storage/" + file.response["imgUrl"])
+      navigator.clipboard.writeText(this.storageServer + "storage/" + file.response["imgUrl"]).then(()=>{
+        ElMessage({
+          message: "成功复制到剪贴板",
+          type: 'success',
+        })
+      });
     }
   },
   computed:{
@@ -100,5 +105,8 @@ export default {
 }
 </script>
 <style scoped>
-
+  *{
+    margin: 0;
+    padding: 0;
+  }
 </style>
