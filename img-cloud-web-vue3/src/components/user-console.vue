@@ -35,7 +35,7 @@
                   <el-popover
                       placement="top-start"
                       :width="250"
-                      trigger="click"
+                      trigger="hover"
                   >
                     <template #reference>
                   <el-image
@@ -100,6 +100,7 @@
             layout="prev, pager, next,jumper"
             :total="total"
             :page-size="page_sizes"
+            :small="true"
             :current-page="current_page"
             @current-change="currentChange"
         ></el-pagination>

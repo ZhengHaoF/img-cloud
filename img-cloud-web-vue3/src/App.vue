@@ -1,6 +1,11 @@
 <template>
   <div id="app">
     <img-cloud-nav></img-cloud-nav>
+    <el-row>
+      <el-col style="text-align: center;color: #656266">
+        Copyright © 2022. ZHF
+      </el-col>
+    </el-row>
   </div>
 </template>
 

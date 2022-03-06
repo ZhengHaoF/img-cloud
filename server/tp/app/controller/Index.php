@@ -4,6 +4,7 @@ namespace app\controller;
 use app\BaseController;
 use Redis;
 use RedisException;
+use think\exception\ErrorException;
 use think\facade\Db;
 use app\Request;
 use think\facade\Filesystem;
@@ -57,7 +58,7 @@ class Index extends BaseController
                     'filename'=>$fileInfo['filename'],
                     "thumb"=>"thumb"
                 ]);
-                return json(array("imgUrl"=>$savename,"msg"=>"用户上传",200));
+                return json(array("imgUrl"=>$savename,"msg"=>"用户上传"),200);
             }
             Db::table("img_allimgs")->insert([
                 'uid'=>"0",
@@ -69,7 +70,7 @@ class Index extends BaseController
             ]);
             return json(array("imgUrl"=>$savename,"msg"=>"游客上传"),200);
         } catch (\think\exception\ValidateException $e) {
-            return json(array("msg"=>$e->getMessage()),403);
+            return json(array("msg"=>$e->getMessage()),500);
         }
     }
 
@@ -157,11 +158,31 @@ class Index extends BaseController
         $res =$this->privateUserCheck($uuid,$token);
         if ($res["status"] == 200){
             return json(Db::table("img_allimgs")->where("uid",$res["uid"]) ->paginate([
-                'list_rows'=> "20",
+                'list_rows'=> "30",
                 'page' => "$page",
             ]));
         }
         return \json(array("msg"=>"用户验证失败"),403);
+    }
+
+    public function delImage(Request $request){
+        $uuid = $request->param("uuid");
+        $token = $request->param("token");
+        $filename = $request->param("filename");
+        $res = $this->privateUserCheck($uuid,$token);
+        if($res["status"] == 200){
+            $r =  Db::table("img_allimgs")->where("filename",$filename)->find();
+            if (sizeof($r)>0){
+                if(unlink("storage/" . $r["dirname"]. "/" . $r["basename"]) & unlink( $r["thumb"]. "/" . $r["basename"])){
+                    Db::table("img_allimgs")->where("filename",$filename)->delete();
+                    return \json(array("msg"=>"删除成功"));
+                }
+            }
+            return \json(array("msg","删除失败"),500);
+        }else{
+            return \json(array("msg"=>"禁止访问"),403);
+        }
+
     }
 
 
