@@ -38,17 +38,16 @@
                       trigger="hover"
                   >
                     <template #reference>
-                  <el-image
-                      style="width: 150px;height: 150px"
-                      @click="imgClick(index)"
-                      :initial-index=initial_index
-                      fit="cover"
-                      :src="this.$store.state.serve_state['storageServer'] + url['thumb'] + '/'  +  url['basename']"
-                      :hide-on-click-modal=true
-                      lazy
-                  >
-                  </el-image>
-              </template>
+                    <el-image
+                        style="width: 150px;height: 150px"
+                        :initial-index=initial_index
+                        fit="cover"
+                        :src="this.$store.state.serve_state['storageServer'] + url['thumb'] + '/'  +  url['basename']"
+                        :hide-on-click-modal=true
+                        lazy
+                    >
+                    </el-image>
+                </template>
                     <el-button type="primary" @click="showImage(index)">查看</el-button>
                     <el-button type="success" @click="copyImageUrl(index)">复制链接</el-button>
                     <el-button type="danger" @click="delImage(index)">删除</el-button>
@@ -144,12 +143,20 @@ export default {
           message: res.data["msg"],
           type: 'success',
         })
-        this.$store.state.user['username'] = this.username;
+
+
+
+        this.$store.state.user.username = this.username;
+        this.$store.state.user.userGroup = res.data['userGroup'];
+
+        console.log(res.data['userGroup'])
+
         this.$store.state.user['uid'] = res.data["uid"];
         localStorage.setItem("uid", res.data["uid"]);
         localStorage.setItem("uuid", res.data["uuid"]);
         localStorage.setItem("token", res.data["token"]);
-        location.reload(); //刷新网页
+        this.getUserImgs();
+
       }).catch(function (error) {
         //请求错误
         if (error.response) {
@@ -219,6 +226,7 @@ export default {
       }
     },
     getUserImgs: function (page) {
+      //获取用户图片
       this.axios.post(this.$store.state.serve_state['dataServer'] + "index.php/getUserImgList", {
         "uuid": localStorage.getItem("uuid"),
         "token": localStorage.getItem("token"),
@@ -250,10 +258,8 @@ export default {
       this.current_page = e;
       console.log(e)
     },
-    imgClick(initial_index) {
-      this.initial_index = initial_index;
-    },
     delImage:function (initial_index){
+      //删除图片
       this.axios.post(this.$store.state.serve_state['dataServer'] + "index.php/delImage", {
         "uuid": localStorage.getItem("uuid"),
         "token": localStorage.getItem("token"),

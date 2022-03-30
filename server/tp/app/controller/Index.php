@@ -4,6 +4,7 @@ namespace app\controller;
 use app\BaseController;
 use Redis;
 use RedisException;
+use think\db\exception\DbException;
 use think\exception\ErrorException;
 use think\facade\Db;
 use app\Request;
@@ -34,6 +35,7 @@ class Index extends BaseController
             validate(['image'=>'fileSize:'.$fileSize.'|fileExt:jpg,png,bmp,heif'])
                 ->check($file);
             $file = $request->file("image");
+            $file_size = $file->getSize();
             $savename = \think\facade\Filesystem::disk('public')->putFile( 'pic', $file);
             $res = $this->privateUserCheck($uuid,$token);
             $fileInfo = pathinfo($savename); //图片数据
@@ -56,6 +58,7 @@ class Index extends BaseController
                     'basename'=>$fileInfo['basename'],
                     'extension'=>$fileInfo['extension'],
                     'filename'=>$fileInfo['filename'],
+                    'size'=>$file_size,
                     "thumb"=>"thumb"
                 ]);
                 return json(array("imgUrl"=>$savename,"msg"=>"用户上传"),200);
@@ -66,6 +69,7 @@ class Index extends BaseController
                 'basename'=>$fileInfo['basename'],
                 'extension'=>$fileInfo['extension'],
                 'filename'=>$fileInfo['filename'],
+                'size'=>$file_size,
                 "thumb"=>"thumb"
             ]);
             return json(array("imgUrl"=>$savename,"msg"=>"游客上传"),200);
@@ -101,20 +105,26 @@ class Index extends BaseController
         } catch (RedisException $e) {
             return json(array("msg"=>"Redis服务运行错误，请联系管理员检查"),500);
         }
-        if($redis)
+
         $username = $request->param('username');
         $password = $request->param('pwd');
         $res = Db::table("img_users")->where("username",$username)->where("password",md5($password))->find();
-        if($res!=null){
+        if($res !== null){
+            if ($res['status'] == "false"){
+                return \json(array("msg"=>"您已被禁止登录，请联系管理员解决"),403);
+            }
             $token = md5($username . time()). $this->randStr(8); //生成token
             //设置 redis 字符串数据
             $uuid = $username . "_" . md5(time()); //用户标识
-            $redis->lPush($uuid,$token,$res['uid']);
+            $redis->lPush($uuid,$res['group']);
+            $redis->lPush($uuid,$token);
+            $redis->lPush($uuid,$res['uid']);
             $redis->expire($uuid,172800); //缓存2天
-            return json(array("msg"=>"登录成功","uuid"=>$uuid,"token"=>$token,"uid"=>$res['uid']),200);
+            return json(array("msg"=>"登录成功","uuid"=>$uuid,"token"=>$token,"uid"=>$res['uid'],"userGroup"=>$res['group']),200);
         }else{
             return json(array("msg"=>"用户名或密码错误"),403);
         }
+
     }
 
     public function userCheck(Request $request): Json
@@ -124,7 +134,7 @@ class Index extends BaseController
         try {
             $res = $this->privateUserCheck($uuid, $token);
             if ($res["status"] == 200){
-                return json(array("msg"=>$res["msg"],"uid" => $res["uid"]),200);
+                return json(array("msg"=>$res["msg"],"uid" => $res["uid"],"userGroup"=>$res['userGroup']),200);
             }else{
                 return json(array("msg"=>$res["msg"]),403);
             }
@@ -144,7 +154,7 @@ class Index extends BaseController
         $redis = $this->initRedis(); //初始化Redis
         //验证用户登录
         if ($redis->exists($uuid) === 1 && $redis->lIndex($uuid,1) === $token){
-            return array("status"=>200,"msg"=>"服务器验证通过","uid"=>$redis->lIndex($uuid,0)); //第一个是uid
+            return array("status"=>200,"msg"=>"服务器验证通过","uid"=>$redis->lIndex($uuid,0),"userGroup"=>$redis->lIndex($uuid,2)); //第一个是uid
         }else{
             return array("status"=>403,"msg"=>"服务器验证未通过");
         }
@@ -165,12 +175,57 @@ class Index extends BaseController
         return \json(array("msg"=>"用户验证失败"),403);
     }
 
+    public function getAdminImgList(Request $request){
+        //获取所有图片列表（管理员用）
+        $uuid = $request->param("uuid");
+        $token = $request->param("token");
+        $page = $request->param("page");
+        $res =$this->privateUserCheck($uuid,$token);
+        if ($res["status"] == 200){
+            if ( $res['userGroup'] != "admin"){
+                return \json(array("msg"=>"权限不足"),403);
+            }
+            return json(Db::table("img_allimgs")->paginate([
+                'list_rows'=> "30",
+                'page' => "$page",
+            ]));
+        }
+        return \json(array("msg"=>"用户验证失败"),403);
+    }
+
     public function delImage(Request $request){
+        //删除图片
         $uuid = $request->param("uuid");
         $token = $request->param("token");
         $filename = $request->param("filename");
         $res = $this->privateUserCheck($uuid,$token);
         if($res["status"] == 200){
+            $r =  Db::table("img_allimgs")->where("filename",$filename)->where("uid",$res['uid'])->find();
+            if ($r != null){
+                if(unlink("storage/" . $r["dirname"]. "/" . $r["basename"]) & unlink( $r["thumb"]. "/" . $r["basename"])){
+                    Db::table("img_allimgs")->where("filename",$filename)->delete();
+                    return \json(array("msg"=>"删除成功"));
+                }
+            }else{
+                return \json(array("msg"=>"权限不足"),403);
+            }
+            return \json(array("msg"=>"删除失败"),500);
+        }else{
+            return \json(array("msg"=>"禁止访问"),403);
+        }
+
+    }
+
+    public function delAdminImage(Request $request){
+        //删除图片(管理员用)
+        $uuid = $request->param("uuid");
+        $token = $request->param("token");
+        $filename = $request->param("filename");
+        $res = $this->privateUserCheck($uuid,$token);
+        if($res["status"] == 200){
+            if ($res['userGroup'] != "admin"){
+                return \json(array("msg"=>"权限不足"),403);
+            }
             $r =  Db::table("img_allimgs")->where("filename",$filename)->find();
             if (sizeof($r)>0){
                 if(unlink("storage/" . $r["dirname"]. "/" . $r["basename"]) & unlink( $r["thumb"]. "/" . $r["basename"])){
@@ -178,7 +233,7 @@ class Index extends BaseController
                     return \json(array("msg"=>"删除成功"));
                 }
             }
-            return \json(array("msg","删除失败"),500);
+                return \json(array("msg"=>"删除失败"),500);
         }else{
             return \json(array("msg"=>"禁止访问"),403);
         }
@@ -210,6 +265,87 @@ class Index extends BaseController
         return $randomString;
 
     }
+
+    public function getServerInfo(){
+        $userCount = Db::table("img_users")->count();
+        $imgCount = Db::table("img_allimgs")->count();
+        $dataCount = Db::table("img_allimgs")->sum("size"); //单位B
+        return \json(array(
+            "userCount"=>$userCount,
+            "imgCount"=>$imgCount,
+            "dataCount"=>$dataCount
+            ));
+    }
+
+    public function getUserList(Request $request){
+        //获取用户列表
+        $uuid = $request->param("uuid");
+        $token = $request->param("token");
+        $uname = explode("_",$uuid)[0];
+        $res = $this->privateUserCheck($uuid,$token);
+
+        if ($res['status'] == 200){
+            if ($res['userGroup'] != "admin"){
+                return \json(array("msg"=>"权限不足"),403);
+            }
+            $users = Db::table("img_users")->select()->toArray();
+            $data = array();
+            for($i=0;$i<sizeof($users);$i++){
+                $uid = $users[$i]['uid'];
+                $username = $users[$i]['username'];
+                $email = $users[$i]['email'];
+                $regdate = $users[$i]['regdate'];
+                $group = $users[$i]['group'];
+                $status = $users[$i]['status'];
+                $userImgCount = Db::table("img_allimgs")->where("uid",$uid)->count();
+                $userImgDataCount = Db::table("img_allimgs")->where("uid",$uid)->sum("size");
+                $data[$i] = array(
+                    "uid"=>$uid,
+                    "username"=>$username,
+                    "email"=>$email,
+                    "regdate"=>$regdate,
+                    "group"=>$group,
+                    "userImgCount"=>$userImgCount,
+                    "userImgDataCount"=>$userImgDataCount,
+                    "userStatus"=>$status
+                );
+            }
+
+            return \json($data);
+        }
+
+
+    }
+
+    public function updateUserInfo(Request $request){
+        //更新用户数据
+        $uuid = $request->param("uuid");
+        $token = $request->param("token");
+        $uid = $request -> param("uid");
+        $userStatus = $request -> param("userStatus");
+        $res = $this->privateUserCheck($uuid,$token);
+        if($res["status"] == 200 && $res['userGroup'] == "admin"){
+            if ($res['uid'] == $uid){
+                return \json(array("msg"=>"不能禁用自己"),500);
+            }
+            $data = [
+              "status"=>$userStatus
+            ];
+            try {
+                Db::table("img_users")->where("uid", $uid)->update($data);
+            } catch (DbException $e) {
+                return \json(array("msg"=>"操作失败"),500);
+            }
+            if ($userStatus == "true"){
+                return \json(array("msg"=>"已启用"));
+            }else{
+                return \json(array("msg"=>"已禁用"));
+            }
+        }else{
+            return \json(array("status"=>403,"msg"=>"权限不足"),403);
+        }
+    }
+
 
 
 }

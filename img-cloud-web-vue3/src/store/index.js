@@ -4,13 +4,13 @@ export default createStore({
     state: {
         user:{
             uid:"",
-            username:"",
+            userGroup:""
         },
         serve_state:{
             dataServer:"https://api.tu.zhfblog.top/",//当前数据服务器
-            //dataServer:"http://localhost:8006/",//当前数据服务器
+            //dataServer:"http://192.168.200.101:8006/",//当前数据服务器
             storageServer:"https://api.tu.zhfblog.top/",//当前存储服务器
-            //storageServer:"http://localhost:8006/",//当前存储服务器
+            //storageServer:"http://192.168.200.101:8006/",//当前存储服务器
             uploadUrl: "index.php/upload",//当前上传接口
         }
 

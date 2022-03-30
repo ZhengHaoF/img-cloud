@@ -13,4 +13,5 @@ app.use(VueAxios, axios)
 app.use(router);
 app.use(ElementPlus);
 app.use(store);
-app.mount('#app')
+app.mount('#app');
+document.title = "Z-ImgCloud"

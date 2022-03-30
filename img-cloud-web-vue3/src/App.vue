@@ -1,11 +1,15 @@
 <template>
   <div id="app">
+
     <img-cloud-nav></img-cloud-nav>
-    <el-row>
-      <el-col style="text-align: center;color: #656266">
-        Copyright © 2022. ZHF
-      </el-col>
-    </el-row>
+
+
+
+
+
+    <el-footer style="text-align: center;color: #666666">
+      Copyright © 2022. ZHF
+    </el-footer>
   </div>
 </template>
 
@@ -15,13 +19,17 @@ import imgCloudNav from './components/img-cloud-nav.vue'
 import {ElMessage} from "element-plus";
 export default {
   name: 'App',
+  data(){
+    return{
+
+    }
+  },
   components: {
     imgCloudNav,
   },
   methods:{
     userCheck:function (){
       if (localStorage.getItem("uuid") === null) return; //如果是空，就取消执行
-
       this.axios.post(this.$store.state.serve_state['dataServer'] + "index.php/userCheck",{
         "uuid":localStorage.getItem("uuid"),
         "token":localStorage.getItem("token"),
@@ -32,6 +40,7 @@ export default {
           type: 'success',
         })
         this.$store.state.user['uid'] =  localStorage.getItem("uuid");
+        this.$store.state.user['userGroup'] = res.data['userGroup']
       }).catch(function (error){
         ElMessage({
           message:error,
@@ -50,5 +59,8 @@ export default {
 <style>
 #app {
 
+}
+.movearea {
+  transition: 0.2s background-color ease;
 }
 </style>

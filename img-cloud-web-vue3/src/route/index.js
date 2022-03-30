@@ -1,7 +1,11 @@
 import { createRouter,createWebHashHistory} from "vue-router";
-const userCount = () => import("../components/user-console.vue")
-const imgUpload = () => import("../components/img-upload.vue")
-
+// const userCount = () => import("../components/user-console.vue")
+// const imgUpload = () => import("../components/img-upload.vue")
+import userCount from "../components/user-console.vue"
+import imgUpload from "../components/img-upload.vue"
+import admin from "../components/img-admin/img-admin.vue"
+import userManagement from  "../components/img-admin/user-management.vue"
+import imgManagement from  "../components/img-admin/img-management.vue"
 const routes = [
     {
         path: "/",
@@ -16,6 +20,21 @@ const routes = [
         path: "/imgUpload",
         name: "imgUpload",
         component: imgUpload
+    },
+    {
+        path: "/admin",
+        name: "admin",
+        component: admin,
+        children:[
+            {
+                path:"/admin/userManagement",
+                component:userManagement
+            },
+            {
+                path:"/admin/imgManagement",
+                component:imgManagement
+            }
+        ]
     }
 ]
 
