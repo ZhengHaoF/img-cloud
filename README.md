@@ -66,6 +66,8 @@ storageServer:"当前存储服务器/"
 #### 参与贡献
 咸鱼郑某
 
+项目正在加紧更新，可以加群提出你想要的功能，取百家之所长，云盘将永久免费开源。
+
 QQ群：857994945
 
 
@@ -84,5 +86,4 @@ QQ群：857994945
 [Axios](https://www.axios-http.cn/)
 
 [ThinkPHP](https://www.thinkphp.cn/)
-
 

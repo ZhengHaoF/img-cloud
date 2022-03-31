@@ -17,7 +17,7 @@
             </el-image>
           </template>
           <el-button type="primary" @click="showImage(index)">查看</el-button>
-          <el-button type="success" @click="copyImageUrl(index)">禁用图片</el-button>
+          <el-button type="success" @click="disableAdminImage(index)">禁用图片</el-button>
           <el-button type="danger" @click="delAdminImage(index)">删除</el-button>
         </el-popover>
         </div>
@@ -118,6 +118,9 @@ export default {
           type: 'error',
         })
       })
+    },
+    disableAdminImage:function (){
+      //禁用图片
     }
   },
   mounted() {
