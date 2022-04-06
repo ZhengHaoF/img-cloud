@@ -45,9 +45,10 @@ export default {
   name: "img-upload",
   data() {
     return {
-      dataServer:this.$store.state.serve_state['dataServer'],//当前数据服务器
-      storageServer:this.$store.state.serve_state['storageServer'],//当前存储服务器
-      uploadUrl:this.$store.state.serve_state['uploadUrl'],//当前上传接口
+      // eslint-disable-next-line no-undef
+      storageServer:serve_state['storageServer'],//当前存储服务器
+      // eslint-disable-next-line no-undef
+      uploadUrl:serve_state['uploadUrl'],//当前上传接口
       imgList:[],
       data:{
         "uid":localStorage.getItem("uid"),

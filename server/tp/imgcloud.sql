@@ -52,9 +52,6 @@ CREATE TABLE `img_users`  (
   PRIMARY KEY (`uid`, `username`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 25 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
 
--- ----------------------------
--- Records of img_users
--- ----------------------------
-INSERT INTO `img_users` VALUES (20, 'ZHF', 'e10adc3949ba59abbe56e057f20f883e', NULL, '2022-02-24', 'admin', 'true');
+
 
 SET FOREIGN_KEY_CHECKS = 1;

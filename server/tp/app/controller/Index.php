@@ -1,9 +1,11 @@
 <?php
+
 namespace app\controller;
 
 use app\BaseController;
 use Redis;
 use RedisException;
+use Symfony\Component\VarDumper\Cloner\Data;
 use think\db\exception\DbException;
 use think\exception\ErrorException;
 use think\facade\Db;
@@ -17,7 +19,7 @@ class Index extends BaseController
 
     public function index()
     {
-        return '<style type="text/css">*{ padding: 0; margin: 0; } div{ padding: 4px 48px;} a{color:#2E5CD5;cursor: pointer;text-decoration: none} a:hover{text-decoration:underline; } body{ background: #fff; font-family: "Century Gothic","Microsoft yahei"; color: #333;font-size:18px;} h1{ font-size: 100px; font-weight: normal; margin-bottom: 12px; } p{ line-height: 1.6em; font-size: 42px }</style><div style="padding: 24px 48px;"> <h1>:) </h1><p> ThinkPHP V' . \think\facade\App::version() . '<br/><span style="font-size:30px;">14载初心不改 - 你值得信赖的PHP框架</span></p><span style="font-size:25px;">[ V6.0 版本由 <a href="https://www.yisu.com/" target="yisu">亿速云</a> 独家赞助发布 ]</span></div><script type="text/javascript" src="https://tajs.qq.com/stats?sId=64890268" charset="UTF-8"></script><script type="text/javascript" src="https://e.topthink.com/Public/static/client.js"></script><think id="ee9b1aa918103c4fc"></think>';
+        return '<style type="text/css">*{ padding: 0; margin: 0; } div{ padding: 4px 48px;} a{color:#2E5CD5;cursor: pointer;text-decoration: none} a:hover{text-decoration:underline; } body{ background: #fff; font-family: "Century Gothic","Microsoft yahei"; color: #333;font-size:18px;} h1{ font-size: 100px; font-weight: normal; margin-bottom: 12px; } p{ line-height: 1.6em; font-size: 42px }</style><div style="padding: 24px 48px;"> <h1><img src="./logo.svg" style="width: 300px"> </h1><p> imgCloud <br/><span style="font-size:30px;">运行环境：ThinkPHP ' . \think\facade\App::version() . '</span></p><span style="font-size:25px;">v1.0.0-beta</span><div><a href="https://gitee.com/ZHFHZ/img-cloud" target="_blank">开源地址</a></div></div> ';
     }
 
     public function hello($name = 'ThinkPHP6')
@@ -25,21 +27,22 @@ class Index extends BaseController
         return 'hello,' . $name;
     }
 
-    public function upload(Request $request){
+    public function upload(Request $request)
+    {
         // 获取表单上传文件
         $file = $request->file();
         $uuid = $request->param("uuid");
         $token = $request->param("token");
-        $fileSize = 1024*1024*10;
+        $fileSize = 1024 * 1024 * 10;
         try {
-            validate(['image'=>'fileSize:'.$fileSize.'|fileExt:jpg,png,bmp,heif'])
+            validate(['image' => 'fileSize:' . $fileSize . '|fileExt:jpg,png,bmp,heif'])
                 ->check($file);
             $file = $request->file("image");
             $file_size = $file->getSize();
-            $savename = \think\facade\Filesystem::disk('public')->putFile( 'pic', $file);
-            $res = $this->privateUserCheck($uuid,$token);
+            $savename = \think\facade\Filesystem::disk('public')->putFile('pic', $file);
+            $res = $this->privateUserCheck($uuid, $token);
             $fileInfo = pathinfo($savename); //图片数据
-            if($uuid != null && $res["status"] ==200){
+            if ($uuid != null && $res["status"] == 200) {
                 //生成缩略图
                 /*
                  *
@@ -51,30 +54,30 @@ class Index extends BaseController
                     }
                  * */
                 $image = \think\Image::open($file);
-                $image->thumb(300, 300)->save('thumb/'.pathinfo($savename)["basename"]);
+                $image->thumb(300, 300)->save('thumb/' . pathinfo($savename)["basename"]);
                 Db::table("img_allimgs")->insert([
-                    'uid'=>$res["uid"],
-                    'dirname'=>$fileInfo['dirname'],
-                    'basename'=>$fileInfo['basename'],
-                    'extension'=>$fileInfo['extension'],
-                    'filename'=>$fileInfo['filename'],
-                    'size'=>$file_size,
-                    "thumb"=>"thumb"
+                    'uid' => $res["uid"],
+                    'dirname' => $fileInfo['dirname'],
+                    'basename' => $fileInfo['basename'],
+                    'extension' => $fileInfo['extension'],
+                    'filename' => $fileInfo['filename'],
+                    'size' => $file_size,
+                    "thumb" => "thumb"
                 ]);
-                return json(array("imgUrl"=>$savename,"msg"=>"用户上传"),200);
+                return json(array("imgUrl" => $savename, "msg" => "用户上传"), 200);
             }
             Db::table("img_allimgs")->insert([
-                'uid'=>"0",
-                'dirname'=>$fileInfo['dirname'],
-                'basename'=>$fileInfo['basename'],
-                'extension'=>$fileInfo['extension'],
-                'filename'=>$fileInfo['filename'],
-                'size'=>$file_size,
-                "thumb"=>"thumb"
+                'uid' => "0",
+                'dirname' => $fileInfo['dirname'],
+                'basename' => $fileInfo['basename'],
+                'extension' => $fileInfo['extension'],
+                'filename' => $fileInfo['filename'],
+                'size' => $file_size,
+                "thumb" => "thumb"
             ]);
-            return json(array("imgUrl"=>$savename,"msg"=>"游客上传"),200);
+            return json(array("imgUrl" => $savename, "msg" => "游客上传"), 200);
         } catch (\think\exception\ValidateException $e) {
-            return json(array("msg"=>$e->getMessage()),500);
+            return json(array("msg" => $e->getMessage()), 500);
         }
     }
 
@@ -84,45 +87,46 @@ class Index extends BaseController
         $username = $request->param('username');
         $password = $request->param('pwd');
         $email = $request->param('email');
-        if (Db::table("img_users")->where("username",$username)->count()===0){
+        if (Db::table("img_users")->where("username", $username)->count() === 0) {
             $data = [
                 'username' => $username,
                 'password' => md5($password),
-                'email'=>$email,
-                'regdate'=>date('Y-m-d H:i:s'),
+                'email' => $email,
+                'regdate' => date('Y-m-d H:i:s'),
             ];
-            if (Db::table("img_users")->insert($data) === 1){
-                return json(array("msg"=>"注册成功"),200);
+            if (Db::table("img_users")->insert($data) === 1) {
+                return json(array("msg" => "注册成功"), 200);
             }
         }
-            return json(array("msg"=>"用户名已存在"),500);
+        return json(array("msg" => "用户名已存在"), 500);
     }
+
     public function userLogin(Request $request): Json
     {
 
         try {
             $redis = $this->initRedis(); //初始化Redis
         } catch (RedisException $e) {
-            return json(array("msg"=>"Redis服务运行错误，请联系管理员检查"),500);
+            return json(array("msg" => "Redis服务运行错误，请联系管理员检查"), 500);
         }
 
         $username = $request->param('username');
         $password = $request->param('pwd');
-        $res = Db::table("img_users")->where("username",$username)->where("password",md5($password))->find();
-        if($res !== null){
-            if ($res['status'] == "false"){
-                return \json(array("msg"=>"您已被禁止登录，请联系管理员解决"),403);
+        $res = Db::table("img_users")->where("username", $username)->where("password", md5($password))->find();
+        if ($res !== null) {
+            if ($res['status'] == "false") {
+                return \json(array("msg" => "您已被禁止登录，请联系管理员解决"), 403);
             }
-            $token = md5($username . time()). $this->randStr(8); //生成token
+            $token = md5($username . time()) . $this->randStr(8); //生成token
             //设置 redis 字符串数据
             $uuid = $username . "_" . md5(time()); //用户标识
-            $redis->lPush($uuid,$res['group']);
-            $redis->lPush($uuid,$token);
-            $redis->lPush($uuid,$res['uid']);
-            $redis->expire($uuid,172800); //缓存2天
-            return json(array("msg"=>"登录成功","uuid"=>$uuid,"token"=>$token,"uid"=>$res['uid'],"userGroup"=>$res['group']),200);
-        }else{
-            return json(array("msg"=>"用户名或密码错误"),403);
+            $redis->lPush($uuid, $res['group']);
+            $redis->lPush($uuid, $token);
+            $redis->lPush($uuid, $res['uid']);
+            $redis->expire($uuid, 172800); //缓存2天
+            return json(array("msg" => "登录成功", "uuid" => $uuid, "token" => $token, "uid" => $res['uid'], "userGroup" => $res['group']), 200);
+        } else {
+            return json(array("msg" => "用户名或密码错误"), 403);
         }
 
     }
@@ -133,14 +137,14 @@ class Index extends BaseController
         $token = $request->param("token");
         try {
             $res = $this->privateUserCheck($uuid, $token);
-            if ($res["status"] == 200){
-                return json(array("msg"=>$res["msg"],"uid" => $res["uid"],"userGroup"=>$res['userGroup']),200);
-            }else{
-                return json(array("msg"=>$res["msg"]),403);
+            if ($res["status"] == 200) {
+                return json(array("msg" => $res["msg"], "uid" => $res["uid"], "userGroup" => $res['userGroup']), 200);
+            } else {
+                return json(array("msg" => $res["msg"]), 403);
             }
 
         } catch (RedisException $e) {
-            return json(array("msg"=>"Redis服务运行错误，请联系管理员检查"),500);
+            return json(array("msg" => "Redis服务运行错误，请联系管理员检查"), 500);
         }
 
     }
@@ -148,94 +152,98 @@ class Index extends BaseController
     /**
      * @throws RedisException
      */
-    private function privateUserCheck($uuid,$token): array
+    private function privateUserCheck($uuid, $token): array
     {
 
         $redis = $this->initRedis(); //初始化Redis
         //验证用户登录
-        if ($redis->exists($uuid) === 1 && $redis->lIndex($uuid,1) === $token){
-            return array("status"=>200,"msg"=>"服务器验证通过","uid"=>$redis->lIndex($uuid,0),"userGroup"=>$redis->lIndex($uuid,2)); //第一个是uid
-        }else{
-            return array("status"=>403,"msg"=>"服务器验证未通过");
+        if ($redis->exists($uuid) === 1 && $redis->lIndex($uuid, 1) === $token) {
+            return array("status" => 200, "msg" => "服务器验证通过", "uid" => $redis->lIndex($uuid, 0), "userGroup" => $redis->lIndex($uuid, 2)); //第一个是uid
+        } else {
+            return array("status" => 403, "msg" => "服务器验证未通过");
         }
     }
 
-    public function getUserImgList(Request $request){
+    public function getUserImgList(Request $request)
+    {
         //获取用户图片列表
         $uuid = $request->param("uuid");
         $token = $request->param("token");
         $page = $request->param("page");
-        $res =$this->privateUserCheck($uuid,$token);
-        if ($res["status"] == 200){
-            return json(Db::table("img_allimgs")->where("uid",$res["uid"]) ->paginate([
-                'list_rows'=> "30",
+        $res = $this->privateUserCheck($uuid, $token);
+        if ($res["status"] == 200) {
+            return json(Db::table("img_allimgs")->where("uid", $res["uid"])->paginate([
+                'list_rows' => "30",
                 'page' => "$page",
             ]));
         }
-        return \json(array("msg"=>"用户验证失败"),403);
+        return \json(array("msg" => "用户验证失败"), 403);
     }
 
-    public function getAdminImgList(Request $request){
+    public function getAdminImgList(Request $request)
+    {
         //获取所有图片列表（管理员用）
         $uuid = $request->param("uuid");
         $token = $request->param("token");
         $page = $request->param("page");
-        $res =$this->privateUserCheck($uuid,$token);
-        if ($res["status"] == 200){
-            if ( $res['userGroup'] != "admin"){
-                return \json(array("msg"=>"权限不足"),403);
+        $res = $this->privateUserCheck($uuid, $token);
+        if ($res["status"] == 200) {
+            if ($res['userGroup'] != "admin") {
+                return \json(array("msg" => "权限不足"), 403);
             }
             return json(Db::table("img_allimgs")->paginate([
-                'list_rows'=> "30",
+                'list_rows' => "30",
                 'page' => "$page",
             ]));
         }
-        return \json(array("msg"=>"用户验证失败"),403);
+        return \json(array("msg" => "用户验证失败"), 403);
     }
 
-    public function delImage(Request $request){
+    public function delImage(Request $request)
+    {
         //删除图片
         $uuid = $request->param("uuid");
         $token = $request->param("token");
         $filename = $request->param("filename");
-        $res = $this->privateUserCheck($uuid,$token);
-        if($res["status"] == 200){
-            $r =  Db::table("img_allimgs")->where("filename",$filename)->where("uid",$res['uid'])->find();
-            if ($r != null){
-                if(unlink("storage/" . $r["dirname"]. "/" . $r["basename"]) & unlink( $r["thumb"]. "/" . $r["basename"])){
-                    Db::table("img_allimgs")->where("filename",$filename)->delete();
-                    return \json(array("msg"=>"删除成功"));
+        $res = $this->privateUserCheck($uuid, $token);
+        if ($res["status"] == 200) {
+            $r = Db::table("img_allimgs")->where("filename", $filename)->where("uid", $res['uid'])->find();
+            if ($r != null) {
+                if (unlink("storage/" . $r["dirname"] . "/" . $r["basename"]) & unlink($r["thumb"] . "/" . $r["basename"])) {
+                    Db::table("img_allimgs")->where("filename", $filename)->delete();
+                    return \json(array("msg" => "删除成功"));
                 }
-            }else{
-                return \json(array("msg"=>"权限不足"),403);
+            } else {
+                return \json(array("msg" => "权限不足"), 403);
             }
-            return \json(array("msg"=>"删除失败"),500);
-        }else{
-            return \json(array("msg"=>"禁止访问"),403);
+            return \json(array("msg" => "删除失败"), 500);
+        } else {
+            return \json(array("msg" => "禁止访问"), 403);
         }
 
     }
 
-    public function delAdminImage(Request $request){
+    public function delAdminImage(Request $request)
+    {
         //删除图片(管理员用)
         $uuid = $request->param("uuid");
         $token = $request->param("token");
         $filename = $request->param("filename");
-        $res = $this->privateUserCheck($uuid,$token);
-        if($res["status"] == 200){
-            if ($res['userGroup'] != "admin"){
-                return \json(array("msg"=>"权限不足"),403);
+        $res = $this->privateUserCheck($uuid, $token);
+        if ($res["status"] == 200) {
+            if ($res['userGroup'] != "admin") {
+                return \json(array("msg" => "权限不足"), 403);
             }
-            $r =  Db::table("img_allimgs")->where("filename",$filename)->find();
-            if (sizeof($r)>0){
-                if(unlink("storage/" . $r["dirname"]. "/" . $r["basename"]) & unlink( $r["thumb"]. "/" . $r["basename"])){
-                    Db::table("img_allimgs")->where("filename",$filename)->delete();
-                    return \json(array("msg"=>"删除成功"));
+            $r = Db::table("img_allimgs")->where("filename", $filename)->find();
+            if (sizeof($r) > 0) {
+                if (unlink("storage/" . $r["dirname"] . "/" . $r["basename"]) & unlink($r["thumb"] . "/" . $r["basename"])) {
+                    Db::table("img_allimgs")->where("filename", $filename)->delete();
+                    return \json(array("msg" => "删除成功"));
                 }
             }
-                return \json(array("msg"=>"删除失败"),500);
-        }else{
-            return \json(array("msg"=>"禁止访问"),403);
+            return \json(array("msg" => "删除失败"), 500);
+        } else {
+            return \json(array("msg" => "禁止访问"), 403);
         }
 
     }
@@ -244,12 +252,13 @@ class Index extends BaseController
     /**
      * @throws RedisException
      */
-    private function initRedis(){
-            //连接本地的 Redis 服务
-            $redis = new Redis();
-            $redis->connect('127.0.0.1', 6379);
-            $redis->ping();
-            return $redis;
+    private function initRedis()
+    {
+        //连接本地的 Redis 服务
+        $redis = new Redis();
+        $redis->connect('127.0.0.1', 6379);
+        $redis->ping();
+        return $redis;
     }
 
     private function randStr($n): string
@@ -266,48 +275,50 @@ class Index extends BaseController
 
     }
 
-    public function getServerInfo(){
+    public function getServerInfo()
+    {
         $userCount = Db::table("img_users")->count();
         $imgCount = Db::table("img_allimgs")->count();
         $dataCount = Db::table("img_allimgs")->sum("size"); //单位B
         return \json(array(
-            "userCount"=>$userCount,
-            "imgCount"=>$imgCount,
-            "dataCount"=>$dataCount
-            ));
+            "userCount" => $userCount,
+            "imgCount" => $imgCount,
+            "dataCount" => $dataCount
+        ));
     }
 
-    public function getUserList(Request $request){
+    public function getUserList(Request $request)
+    {
         //获取用户列表
         $uuid = $request->param("uuid");
         $token = $request->param("token");
-        $uname = explode("_",$uuid)[0];
-        $res = $this->privateUserCheck($uuid,$token);
+        $uname = explode("_", $uuid)[0];
+        $res = $this->privateUserCheck($uuid, $token);
 
-        if ($res['status'] == 200){
-            if ($res['userGroup'] != "admin"){
-                return \json(array("msg"=>"权限不足"),403);
+        if ($res['status'] == 200) {
+            if ($res['userGroup'] != "admin") {
+                return \json(array("msg" => "权限不足"), 403);
             }
             $users = Db::table("img_users")->select()->toArray();
             $data = array();
-            for($i=0;$i<sizeof($users);$i++){
+            for ($i = 0; $i < sizeof($users); $i++) {
                 $uid = $users[$i]['uid'];
                 $username = $users[$i]['username'];
                 $email = $users[$i]['email'];
                 $regdate = $users[$i]['regdate'];
                 $group = $users[$i]['group'];
                 $status = $users[$i]['status'];
-                $userImgCount = Db::table("img_allimgs")->where("uid",$uid)->count();
-                $userImgDataCount = Db::table("img_allimgs")->where("uid",$uid)->sum("size");
+                $userImgCount = Db::table("img_allimgs")->where("uid", $uid)->count();
+                $userImgDataCount = Db::table("img_allimgs")->where("uid", $uid)->sum("size");
                 $data[$i] = array(
-                    "uid"=>$uid,
-                    "username"=>$username,
-                    "email"=>$email,
-                    "regdate"=>$regdate,
-                    "group"=>$group,
-                    "userImgCount"=>$userImgCount,
-                    "userImgDataCount"=>$userImgDataCount,
-                    "userStatus"=>$status
+                    "uid" => $uid,
+                    "username" => $username,
+                    "email" => $email,
+                    "regdate" => $regdate,
+                    "group" => $group,
+                    "userImgCount" => $userImgCount,
+                    "userImgDataCount" => $userImgDataCount,
+                    "userStatus" => $status
                 );
             }
 
@@ -317,35 +328,114 @@ class Index extends BaseController
 
     }
 
-    public function updateUserInfo(Request $request){
+    public function updateUserInfo(Request $request)
+    {
         //更新用户数据
         $uuid = $request->param("uuid");
         $token = $request->param("token");
-        $uid = $request -> param("uid");
-        $userStatus = $request -> param("userStatus");
-        $res = $this->privateUserCheck($uuid,$token);
-        if($res["status"] == 200 && $res['userGroup'] == "admin"){
-            if ($res['uid'] == $uid){
-                return \json(array("msg"=>"不能禁用自己"),500);
+        $uid = $request->param("uid");
+        $userStatus = $request->param("userStatus");
+        $res = $this->privateUserCheck($uuid, $token);
+        if ($res["status"] == 200 && $res['userGroup'] == "admin") {
+            if ($res['uid'] == $uid) {
+                return \json(array("msg" => "不能禁用自己"), 500);
             }
             $data = [
-              "status"=>$userStatus
+                "status" => $userStatus
             ];
             try {
                 Db::table("img_users")->where("uid", $uid)->update($data);
             } catch (DbException $e) {
-                return \json(array("msg"=>"操作失败"),500);
+                return \json(array("msg" => "操作失败"), 500);
             }
-            if ($userStatus == "true"){
-                return \json(array("msg"=>"已启用"));
-            }else{
-                return \json(array("msg"=>"已禁用"));
+            if ($userStatus == "true") {
+                return \json(array("msg" => "已启用"));
+            } else {
+                return \json(array("msg" => "已禁用"));
             }
-        }else{
-            return \json(array("status"=>403,"msg"=>"权限不足"),403);
+        } else {
+            return \json(array("status" => 403, "msg" => "权限不足"), 403);
         }
     }
 
+
+    public function imgInstall(Request $request)
+    {
+
+        try {
+            //文件存在
+            fopen(root_path() . "install_lock.txt","r");
+            return \json(array("msg"=>"安装文件已经存在如需重新安装，请把tp目录下的install_lock.txt文件删除，并手动重置数据库"),500);
+        }catch (ErrorException $err){
+            //文件不存在
+        }
+
+
+
+        $admin_name = $request->param("admin_name");
+        $admin_pwd = md5($request->param("admin_pwd"));
+        $admin_email = $request->param("admin_email");
+
+
+        $sql = [
+            "SET NAMES utf8mb4;",
+            "SET FOREIGN_KEY_CHECKS = 0;",
+
+            "DROP TABLE IF EXISTS `img_allimgs`;",
+
+
+            "CREATE TABLE `img_allimgs`  (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `uid` int(11) NULL DEFAULT NULL,
+  `dirname` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '路径',
+  `basename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '基础文件名（文件名）',
+  `extension` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '格式',
+  `filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '文件名（单纯的文件名）',
+  `size` int(20) NULL DEFAULT NULL COMMENT '文件大小',
+  `thumb` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '缩略图路径',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;",
+
+            "DROP TABLE IF EXISTS `img_users`;",
+
+
+            "CREATE TABLE `img_users`  (
+  `uid` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '用户名',
+  `password` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '密码',
+  `email` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '用户邮箱',
+  `regdate` date NULL DEFAULT NULL COMMENT '注册时间',
+  `group` set('user','admin') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT 'user' COMMENT '用户组',
+  `status` set('true','false') CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'true',
+  PRIMARY KEY (`uid`, `username`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;",
+
+
+            "SET FOREIGN_KEY_CHECKS = 1;"
+
+        ];
+        $con = @mysqli_connect(env("DATABASE_HOSTNAME"), env("DATABASE_USERNAME"), env("DATABASE_PASSWORD"),env("DATABASE"));
+        if ($con){
+            foreach ($sql as $item){
+                Db::query($item);
+            }
+            Db::table("img_users")->insert([
+                "username"=>$admin_name,
+                "password"=>$admin_pwd,
+                "email"=>$admin_email,
+                "regdate"=>date('Y-m-d H:i:s'),
+                "group"=>"admin",
+                "status"=>"true"
+            ]);
+        }else{
+            return \json(500,array("msg"=>"操作失败,数据库未创建或其他错误"));
+        }
+
+        $lock_file = fopen(root_path() . "install_lock.txt", "w");
+        fwrite($lock_file, "安装成功后自动生成，请勿删除!!");
+        return \json(array("msg"=>"安装成功"));
+
+    }
 
 
 }

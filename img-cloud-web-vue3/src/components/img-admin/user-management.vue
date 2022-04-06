@@ -26,6 +26,8 @@ export default {
   name: "user-management",
   data() {
     return {
+      // eslint-disable-next-line no-undef
+      serve_state:serve_state,
       userData: [
         // {
         //   "uid": 1,
@@ -42,7 +44,7 @@ export default {
   methods: {
     getUserList: function () {
       //获取用户列表
-      axios.post(this.$store.state.serve_state['dataServer'] + "index.php/getUserList", {
+      axios.post(this.serve_state['dataServer'] + "index.php/getUserList", {
         "uuid": localStorage.getItem("uuid"),
         "token": localStorage.getItem("token"),
       }).then((res) => {
@@ -65,7 +67,7 @@ export default {
     },
     updateUserInfo: function (uid, status) {
       //更新用户数据
-      axios.post(this.$store.state.serve_state['dataServer'] + "index.php/updateUserInfo", {
+      axios.post(this.serve_state['dataServer'] + "index.php/updateUserInfo", {
         "uuid": localStorage.getItem("uuid"),
         "token": localStorage.getItem("token"),
         "uid": uid,

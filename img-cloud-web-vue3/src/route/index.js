@@ -6,6 +6,7 @@ import imgUpload from "../components/img-upload.vue"
 import admin from "../components/img-admin/img-admin.vue"
 import userManagement from  "../components/img-admin/user-management.vue"
 import imgManagement from  "../components/img-admin/img-management.vue"
+import imgInstall from "../components/img-install/img-install.vue"
 const routes = [
     {
         path: "/",
@@ -20,6 +21,11 @@ const routes = [
         path: "/imgUpload",
         name: "imgUpload",
         component: imgUpload
+    },
+    {
+        path: "/install",
+        name: "imgInstall",
+        component: imgInstall
     },
     {
         path: "/admin",

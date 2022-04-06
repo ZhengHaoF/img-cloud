@@ -42,7 +42,7 @@
                         style="width: 150px;height: 150px"
                         :initial-index=initial_index
                         fit="cover"
-                        :src="this.$store.state.serve_state['storageServer'] + url['thumb'] + '/'  +  url['basename']"
+                        :src="this.serve_state['storageServer'] + url['thumb'] + '/'  +  url['basename']"
                         :hide-on-click-modal=true
                         lazy
                     >
@@ -116,6 +116,8 @@ export default {
   name: "user-console",
   data() {
     return {
+      // eslint-disable-next-line no-undef
+      serve_state:serve_state,
       username: "",
       pwd: "",
       determinePwd: "",//密码二次验证
@@ -134,7 +136,7 @@ export default {
   methods: {
     userLogin: function () {
       //用户登录
-      this.axios.post(this.$store.state.serve_state['dataServer'] + "index.php/UserLogin", {
+      this.axios.post(this.serve_state['dataServer'] + "index.php/UserLogin", {
         "username": this.username,
         "pwd": this.pwd
       }).then(res => {
@@ -184,7 +186,7 @@ export default {
     },
     userRegistered: function () {
       if (this.determinePwd === this.pwd) {
-        this.axios.post(this.$store.state.serve_state['dataServer'] + "index.php/userRegistered", {
+        this.axios.post(this.serve_state['dataServer'] + "index.php/userRegistered", {
           "username": this.username,
           "pwd": this.pwd
         }).then(res => {
@@ -227,7 +229,7 @@ export default {
     },
     getUserImgs: function (page) {
       //获取用户图片
-      this.axios.post(this.$store.state.serve_state['dataServer'] + "index.php/getUserImgList", {
+      this.axios.post(this.serve_state['dataServer'] + "index.php/getUserImgList", {
         "uuid": localStorage.getItem("uuid"),
         "token": localStorage.getItem("token"),
         "page": page
@@ -238,7 +240,7 @@ export default {
         this.imgInfos = res.data['data']; //数据
         this.urls = [];
         for (const re of this.imgInfos) {
-          this.urls.push(this.$store.state.serve_state['storageServer'] + "storage/" + re["dirname"] + "/" + re["basename"])
+          this.urls.push(this.serve_state['storageServer'] + "storage/" + re["dirname"] + "/" + re["basename"])
         }
       }).catch(function (error) {
         //请求错误
@@ -260,7 +262,7 @@ export default {
     },
     delImage:function (initial_index){
       //删除图片
-      this.axios.post(this.$store.state.serve_state['dataServer'] + "index.php/delImage", {
+      this.axios.post(this.serve_state['dataServer'] + "index.php/delImage", {
         "uuid": localStorage.getItem("uuid"),
         "token": localStorage.getItem("token"),
         "filename":this.imgInfos[initial_index]["filename"]

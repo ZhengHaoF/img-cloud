@@ -12,7 +12,7 @@
             <el-image
                 style="width: 150px;height: 150px;margin: 8px"
                 fit="cover"
-                :src="this.$store.state.serve_state['storageServer'] + url['thumb'] + '/'  +  url['basename']"
+                :src="this.serve_state['storageServer'] + url['thumb'] + '/'  +  url['basename']"
             >
             </el-image>
           </template>
@@ -49,6 +49,8 @@ export default {
   name: "img-management",
   data(){
     return{
+      // eslint-disable-next-line no-undef
+      serve_state:serve_state,
       imgInfos: [],
       urls: [],
       initial_index: 0,
@@ -74,7 +76,7 @@ export default {
     },
     getAdminImgs: function (page) {
       //获取用户图片
-      this.axios.post(this.$store.state.serve_state['dataServer'] + "index.php/getAdminImgList", {
+      this.axios.post(this.serve_state['dataServer'] + "index.php/getAdminImgList", {
         "uuid": localStorage.getItem("uuid"),
         "token": localStorage.getItem("token"),
         "page": page
@@ -85,7 +87,7 @@ export default {
         this.imgInfos = res.data['data']; //数据
         this.urls = [];
         for (const re of this.imgInfos) {
-          this.urls.push(this.$store.state.serve_state['storageServer'] + "storage/" + re["dirname"] + "/" + re["basename"])
+          this.urls.push(this.serve_state['storageServer'] + "storage/" + re["dirname"] + "/" + re["basename"])
         }
       }).catch(function (error) {
         //请求错误
@@ -101,7 +103,7 @@ export default {
     },
     delAdminImage:function (initial_index){
       //删除图片
-      this.axios.post(this.$store.state.serve_state['dataServer'] + "index.php/delAdminImage", {
+      this.axios.post(this.serve_state['dataServer'] + "index.php/delAdminImage", {
         "uuid": localStorage.getItem("uuid"),
         "token": localStorage.getItem("token"),
         "filename":this.imgInfos[initial_index]["filename"]

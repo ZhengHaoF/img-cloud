@@ -18,7 +18,8 @@ export default {
   name: "img-cloud-nav",
   data() {
     return {
-
+      // eslint-disable-next-line no-undef
+      serve_state:serve_state,
     };
   },
   methods: {

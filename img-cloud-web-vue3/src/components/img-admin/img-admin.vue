@@ -55,6 +55,8 @@ export default {
   name: "img-admin",
   data() {
     return {
+      // eslint-disable-next-line no-undef
+      serve_state:serve_state,
       serverInfo: {
         // "userCount": 9,
         // "imgCount": 20,
@@ -64,7 +66,7 @@ export default {
   },
   methods: {
     getServerInfo: function () {
-      axios.get(this.$store.state.serve_state['dataServer'] + "index.php/getServerInfo?=" + Math.floor(Math.random()*10000)).then((res) => {
+      axios.get(this.serve_state['dataServer'] + "index.php/getServerInfo?=" + Math.floor(Math.random()*10000)).then((res) => {
         this.serverInfo = res.data;
       }).catch(function (error) {
         //请求错误
