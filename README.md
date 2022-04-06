@@ -37,8 +37,6 @@ imgCloud图床，一个基于Vue-Cli和ThinkPHP的前后端分离图床。
 ### （一）事前准备
 imgCloud前后端分离，后续将会推出多服务器支持
 1. 您需要两个域名（我们以tu.zhfblog.top和api.tu.zhfblog.top为例）
-2. 您需要先确保安装了node.JS和npm，现在node.JS自带npm，在命令提示符中输入npm -v查看npm是否安装
-3. 在您的电脑上输入命令 `git clone https://gitee.com/ZHFHZ/img-cloud.git` 下载此项目，如您没有安装Git，则下载zip文件并解压
 
 ### （二）部署后端
 1. 本程序后端采用ThinkPHP，建议使用PHP7.4环境部署
