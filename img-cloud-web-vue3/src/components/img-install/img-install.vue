@@ -38,15 +38,15 @@
 <script>
 import axios from "axios";
 import {ElMessage, ElMessageBox} from "element-plus";
-import "../../../public/config.js"
+
 
 export default {
   name: "img-install",
   data(){
     return{
+      // eslint-disable-next-line no-undef
+      serve_state:serve_state,
       from:{
-        // eslint-disable-next-line no-undef
-        serve_state:serve_state,
         admin_name:"",
         admin_email:"",
         admin_pwd:"",
@@ -70,6 +70,7 @@ export default {
   },
   methods:{
     imgInstall:function (){
+      console.log(this.serve_state)
       if (this.from.admin_name === "" || this.from.admin_pwd === "" || this.from.admin_pwd2 === "" || this.from.admin_email === ""){
         ElMessage({
           message: '请填写所有字段',
