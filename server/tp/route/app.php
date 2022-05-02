@@ -28,4 +28,5 @@ Route::post('updateUserInfo', 'index/updateUserInfo'); //更新用户信息
 Route::post('getAdminImgList', 'index/getAdminImgList');//获取所有图片列表（管理员用）
 Route::post('delAdminImage', 'index/delAdminImage');//删除图片（管理员用）
 Route::post('imgInstall', 'index/imgInstall');//删除图片（管理员用）
+Route::get('imgInstallCheck', 'index/imgInstallCheck');//环境检查
 

@@ -36,7 +36,7 @@ imgCloud图床，一个基于Vue-Cli和ThinkPHP的前后端分离图床。
 
 ### （一）事前准备
 imgCloud前后端分离，后续将会推出多服务器支持
-1. 您需要两个域名（我们以tu.zhfblog.top和api.tu.zhfblog.top为例）
+1. 建议您使用一个二级域名和一个三级域名来完成前后端分离部署，（我们以tu.zhfblog.top和api.tu.zhfblog.top为例）
 
 ### （二）部署后端
 1. 本程序后端采用ThinkPHP，建议使用PHP7.4环境部署

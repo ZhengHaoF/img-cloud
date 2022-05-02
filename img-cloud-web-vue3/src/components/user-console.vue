@@ -110,7 +110,7 @@
 
 <script>
 
-import {ElMessage} from "element-plus";
+import {ElMessage, ElMessageBox} from "element-plus";
 
 export default {
   name: "user-console",
@@ -287,20 +287,27 @@ export default {
       this.img_viewer_show = true;
     },
     copyImageUrl:function (initial_index){
-      try {
-        window.navigator.clipboard.writeText(this.urls[initial_index]).then(()=>{
-          ElMessage({
-            message: "成功复制到剪贴板",
-            type: 'success',
+      ElMessageBox.alert("<textarea style='width: 100%'>" + this.urls[initial_index] + "</textarea>", '图片直链', {
+        confirmButtonText: '复制到剪贴板',
+        dangerouslyUseHTMLString:true
+      })
+          .then(() => {
+            try {
+              window.navigator.clipboard.writeText(this.urls[initial_index]).then(()=>{
+                ElMessage({
+                  message: "成功复制到剪贴板",
+                  type: 'success',
+                })
+              });
+            }catch (err){
+              console.error(err)
+              ElMessage({
+                message: "当前浏览器不支持写入剪切板操作，请手动复制！",
+                type: 'error',
+              })
+            }
           })
-        });
-      }catch (err){
-        console.error(err)
-        ElMessage({
-          message: "当前浏览器不支持写入剪切板操作，请在https下访问或更改浏览器权限！",
-          type: 'error',
-        })
-      }
+
 
     }
   },
@@ -315,5 +322,7 @@ export default {
 .login-input {
   margin-bottom: 10px;
 }
+
+
 
 </style>

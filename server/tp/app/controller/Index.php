@@ -5,13 +5,10 @@ namespace app\controller;
 use app\BaseController;
 use Redis;
 use RedisException;
-use Symfony\Component\VarDumper\Cloner\Data;
 use think\db\exception\DbException;
 use think\exception\ErrorException;
 use think\facade\Db;
 use app\Request;
-use think\facade\Filesystem;
-use think\Image;
 use \think\response\Json;
 
 class Index extends BaseController
@@ -103,6 +100,7 @@ class Index extends BaseController
 
     public function userLogin(Request $request): Json
     {
+        //用户登录
 
         try {
             $redis = $this->initRedis(); //初始化Redis
@@ -154,7 +152,6 @@ class Index extends BaseController
      */
     private function privateUserCheck($uuid, $token): array
     {
-
         $redis = $this->initRedis(); //初始化Redis
         //验证用户登录
         if ($redis->exists($uuid) === 1 && $redis->lIndex($uuid, 1) === $token) {
@@ -358,7 +355,23 @@ class Index extends BaseController
         }
     }
 
+    public function imgInstallCheck(Request $request): Json
+    {
+        //安装检查
+        $redis = extension_loaded("redis")?"true":"false";
 
+        $php_v = substr(PHP_VERSION,0,3);
+
+        $check = $redis && $php_v>7.2;
+
+        return \json(array(
+            "check"=>$check,
+            "data"=>array(
+                array("name"=>"Redis扩展","status"=>$redis?"true":"false"),
+                array("name"=>"PHP版本","status"=>$php_v>7.2?"true":"false")
+            )
+            ));
+    }
     public function imgInstall(Request $request)
     {
 
