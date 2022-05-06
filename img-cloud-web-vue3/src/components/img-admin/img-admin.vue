@@ -16,6 +16,12 @@
               用户管理
             </el-button>
           </router-link>
+
+          <router-link to="/admin/webInfoManagement" style="text-decoration: none">
+            <el-button>
+              网站信息管理
+            </el-button>
+          </router-link>
         </el-card>
       </el-col>
 

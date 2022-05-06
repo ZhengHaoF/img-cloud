@@ -7,24 +7,23 @@ use Redis;
 use RedisException;
 use think\db\exception\DbException;
 use think\exception\ErrorException;
+use think\facade\App;
 use think\facade\Db;
 use app\Request;
-use \think\response\Json;
+use think\facade\Filesystem;
+use think\Image;
+use think\response\Json;
 
 class Index extends BaseController
 {
 
-    public function index()
+    public function index(): string
     {
-        return '<style type="text/css">*{ padding: 0; margin: 0; } div{ padding: 4px 48px;} a{color:#2E5CD5;cursor: pointer;text-decoration: none} a:hover{text-decoration:underline; } body{ background: #fff; font-family: "Century Gothic","Microsoft yahei"; color: #333;font-size:18px;} h1{ font-size: 100px; font-weight: normal; margin-bottom: 12px; } p{ line-height: 1.6em; font-size: 42px }</style><div style="padding: 24px 48px;"> <h1><img src="./logo.svg" style="width: 300px"> </h1><p> imgCloud <br/><span style="font-size:30px;">运行环境：ThinkPHP ' . \think\facade\App::version() . '</span></p><span style="font-size:25px;">v1.0.0-beta</span><div><a href="https://gitee.com/ZHFHZ/img-cloud" target="_blank">开源地址</a></div></div> ';
+        return '<style>*{ padding: 0; margin: 0; } div{ padding: 4px 48px;} a{color:#2E5CD5;cursor: pointer;text-decoration: none} a:hover{text-decoration:underline; } body{ background: #fff; font-family: "Century Gothic","Microsoft yahei",serif; color: #333;font-size:18px;} h1{ font-size: 100px; font-weight: normal; margin-bottom: 12px; } p{ line-height: 1.6em; font-size: 42px }</style><div style="padding: 24px 48px;"> <h1><img alt="" src="./logo.svg" style="width: 300px"> </h1><p> imgCloud <br/><span style="font-size:30px;">运行环境：ThinkPHP ' . App::version() . '</span></p><span style="font-size:25px;">v1.0.0-beta</span><div><a href="https://gitee.com/ZHFHZ/img-cloud" target="_blank">开源地址</a></div></div> ';
     }
 
-    public function hello($name = 'ThinkPHP6')
-    {
-        return 'hello,' . $name;
-    }
 
-    public function upload(Request $request)
+    public function upload(Request $request): Json
     {
         // 获取表单上传文件
         $file = $request->file();
@@ -36,7 +35,7 @@ class Index extends BaseController
                 ->check($file);
             $file = $request->file("image");
             $file_size = $file->getSize();
-            $savename = \think\facade\Filesystem::disk('public')->putFile('pic', $file);
+            $savename = Filesystem::disk('public')->putFile('pic', $file);
             $res = $this->privateUserCheck($uuid, $token);
             $fileInfo = pathinfo($savename); //图片数据
             if ($uuid != null && $res["status"] == 200) {
@@ -50,7 +49,7 @@ class Index extends BaseController
                       "filename": "476771bc8e6321352302e92608cbf9e2"
                     }
                  * */
-                $image = \think\Image::open($file);
+                $image = Image::open($file);
                 $image->thumb(300, 300)->save('thumb/' . pathinfo($savename)["basename"]);
                 Db::table("img_allimgs")->insert([
                     'uid' => $res["uid"],
@@ -322,7 +321,7 @@ class Index extends BaseController
             return \json($data);
         }
 
-
+        return json(array("msg"=>"错误"));
     }
 
     public function updateUserInfo(Request $request)
@@ -449,6 +448,57 @@ class Index extends BaseController
         return \json(array("msg"=>"安装成功"));
 
     }
+
+    public function getWebInfo() {
+        try {
+            $redis = $this->initRedis(); //初始化Redis
+        } catch (RedisException $e) {
+            return json(array("msg" => "Redis服务运行错误，请联系管理员检查"), 500);
+        }
+
+        if($redis->exists("web_config") != 1){
+            $web_config_file = file_get_contents("../public/web_config.json");
+            $redis->set("web_config", $web_config_file);
+            $redis->expire("web_config", 172800); //缓存2天
+        }
+
+        return \json(json_decode($redis->get("web_config")));
+
+
+
+    }
+
+    public function setWebInfo(Request $request){
+        try {
+            $redis = $this->initRedis(); //初始化Redis
+        } catch (RedisException $e) {
+            return json(array("msg" => "Redis服务运行错误，请联系管理员检查"), 500);
+        }
+
+        $web_name = $request->param("web_name");
+        $web_text = $request->param("web_text");
+        $web_logo = $request->param("web_logo");
+        $web_copy_right = $request->param("web_copy_right");
+        $uuid = $request->param("uuid");
+        $token = $request->param("token");
+        $check = $this->privateUserCheck($uuid,$token);
+        if($check['status'] == 200 && $check['userGroup'] == "admin"){
+            $data = [
+                "web_name" => $web_name,
+                "web_text" => $web_text,
+                "web_logo" => $web_logo,
+                "web_copy_right" => $web_copy_right
+            ];
+
+            $web_config_file = fopen("../public/web_config.json","w");
+            fwrite($web_config_file, json_encode($data,JSON_UNESCAPED_UNICODE));
+            fclose($web_config_file);
+            $redis->set('web_config',json_encode($data,JSON_UNESCAPED_UNICODE));
+            return json(array("msg" =>"更新成功"));
+        }
+        return json(array("msg" =>"用户未登录或权限不足"),403);
+    }
+
 
 
 }

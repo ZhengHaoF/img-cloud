@@ -1,14 +1,9 @@
 <template>
-  <div id="app">
 
     <img-cloud-nav></img-cloud-nav>
-
-
-
     <el-footer style="text-align: center;color: #666666">
-      Copyright © 2022. ZHF
+      {{copy_right}}
     </el-footer>
-  </div>
 </template>
 
 <script>
@@ -21,7 +16,8 @@ export default {
   data(){
     return{
       // eslint-disable-next-line no-undef
-      serve_state:serve_state
+      serve_state:serve_state,
+      copy_right:this.$store.state.web_info['copy_right']
     }
   },
   components: {

@@ -5,6 +5,12 @@ export default createStore({
         user:{
             uid:"",
             userGroup:""
+        },
+        web_info:{
+            "web_name":"",
+            "web_text":"",
+            "web_logo":"",
+            "web_copy_right":"",
         }
     },
     mutations: {

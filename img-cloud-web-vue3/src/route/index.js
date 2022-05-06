@@ -7,6 +7,7 @@ import admin from "../components/img-admin/img-admin.vue"
 import userManagement from  "../components/img-admin/user-management.vue"
 import imgManagement from  "../components/img-admin/img-management.vue"
 import imgInstall from "../components/img-install/img-install.vue"
+import webInfoManagement from "@/components/img-admin/web-info-management";
 const routes = [
     {
         path: "/",
@@ -39,6 +40,10 @@ const routes = [
             {
                 path:"/admin/imgManagement",
                 component:imgManagement
+            },
+            {
+                path:"/admin/webInfoManagement",
+                component:webInfoManagement
             }
         ]
     }

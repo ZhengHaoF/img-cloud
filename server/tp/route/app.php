@@ -29,4 +29,7 @@ Route::post('getAdminImgList', 'index/getAdminImgList');//获取所有图片列�
 Route::post('delAdminImage', 'index/delAdminImage');//删除图片（管理员用）
 Route::post('imgInstall', 'index/imgInstall');//删除图片（管理员用）
 Route::get('imgInstallCheck', 'index/imgInstallCheck');//环境检查
+Route::get('getWebInfo', 'index/getWebInfo');//获取图床信息
+Route::post('SetWebInfo', 'index/SetWebInfo');//设置图床信息
+
 
